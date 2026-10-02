@@ -1,10 +1,15 @@
 from agent.commands import execute_command
+from voice.speech_to_text import listen
 
 
 print("Computer Agent started.")
 
 while True:
-    command = input("What should I do? ")
+    
+    command = listen()
+
+    if command is None:
+        continue
 
     if command.lower().strip() == "exit":
         print("Computer Agent stopped.")
