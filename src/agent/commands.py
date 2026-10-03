@@ -9,10 +9,16 @@ def execute_command(command):
         open_application("notepad")
 
     elif command.lower() == "open calculator":
-        open_application("calculator")
+        open_application("calc")
 
     elif command.lower() == "open paint":
         open_application("mspaint")
+
+    elif command.lower() == "open browser":
+        open_application("chrome")
+
+    elif command.lower() == "open word":
+        open_application("winword")
 
     elif command.lower().startswith("write "):
         text = command[6:]
