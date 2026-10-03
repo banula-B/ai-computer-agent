@@ -1,38 +1,94 @@
-import speech_recognition as sr
+import pyaudio
+import wave
+import os
+from faster_whisper import WhisperModel
 
 
-recognizer = sr.Recognizer()
+# Audio settings
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 16000
+RECORD_SECONDS = 5
 
-# Speech recognition settings
-recognizer.energy_threshold = 300
-recognizer.dynamic_energy_threshold = True
-recognizer.pause_threshold = 1.0
-recognizer.phrase_threshold = 0.3
-recognizer.non_speaking_duration = 0.5
+AUDIO_FILE = "temp_command.wav"
+
+
+# Load Whisper model once
+print("Loading Whisper model...")
+
+model = WhisperModel(
+    "small",
+    device="cpu",
+    compute_type="int8"
+)
+
+print("Whisper model loaded.")
 
 
 def listen():
-    with sr.Microphone() as source:
+    audio = pyaudio.PyAudio()
 
-        print("Listening...")
+    stream = audio.open(
+        format=FORMAT,
+        channels=CHANNELS,
+        rate=RATE,
+        input=True,
+        frames_per_buffer=CHUNK
+    )
 
-        audio = recognizer.listen(
-            source,
-            timeout=None,
-            phrase_time_limit=None
+    print("\nListening...")
+
+    frames = []
+
+    for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+        data = stream.read(CHUNK)
+        frames.append(data)
+
+    print("Recording finished.")
+
+    stream.stop_stream()
+    stream.close()
+
+    sample_width = audio.get_sample_size(FORMAT)
+    audio.terminate()
+
+    # Save recorded audio
+    with wave.open(AUDIO_FILE, "wb") as sound_file:
+        sound_file.setnchannels(CHANNELS)
+        sound_file.setsampwidth(sample_width)
+        sound_file.setframerate(RATE)
+        sound_file.writeframes(b"".join(frames))
+
+    print("Transcribing...")
+
+    segments, info = model.transcribe(
+    AUDIO_FILE,
+    language="en",
+    beam_size=5,
+    vad_filter=True,
+    initial_prompt=(
+        "Computer commands: open, write, type, press, "
+        "click, move, close, launch, save, search."
         )
+    )   
 
-    try:
-        text = recognizer.recognize_google(audio)
+    text = " ".join(
+    segment.text.strip()
+    for segment in segments
+    ).strip()
 
+    if not text:
+        print("No speech detected.")
+        return None
+
+    print(f"You said: {text}")
+
+    return text
+
+    if text:
         print(f"You said: {text}")
-
         return text
 
-    except sr.UnknownValueError:
-        print("Sorry, I couldn't understand what you said.")
-        return None
-
-    except sr.RequestError as error:
-        print(f"Speech recognition service error: {error}")
-        return None
+    print("Sorry, I couldn't understand what you said.")
+    return None

@@ -5,14 +5,14 @@ from voice.speech_to_text import listen
 print("Computer Agent started.")
 
 while True:
-    
+
     command = listen()
 
     if command is None:
         continue
 
-    if command.lower().strip() == "exit":
+    result = execute_command(command)
+
+    if result == "exit":
         print("Computer Agent stopped.")
         break
-
-    execute_command(command)
