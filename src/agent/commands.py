@@ -34,6 +34,14 @@ def execute_command(command):
         open_application("mspaint")
         return
 
+    if command_lower == "open word":
+        open_application("winword")
+        return
+
+    if command_lower == "open browser":
+        open_application("chrome")
+        return
+
     # -------------------------
     # Write / Type text
     # -------------------------
