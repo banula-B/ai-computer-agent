@@ -1,82 +1,94 @@
+
+import re
+
 from computer.applications import open_application
 from computer.keyboard import type_text, press_key
 
 
+def normalize_command(command):
+    command = command.lower().strip()
+    command = command.rstrip(".!?,")
+
+    # Remove common polite phrases.
+    command = re.sub(
+        r"^(please\s+|can you\s+|could you\s+|"
+        r"would you\s+|hey computer\s+)+",
+        "",
+        command
+    )
+
+    # Correct common Whisper transcription errors.
+    corrections = {
+        "node pad": "notepad",
+        "note pad": "notepad",
+        "not panned": "notepad",
+        "not bad": "notepad",
+        "not pan": "notepad",
+        "calculator app": "calculator",
+        "ms paint": "paint",
+    }
+
+    command = re.sub(r"^right(?=\s)", "write", command)
+
+    for wrong, correct in corrections.items():
+        command = command.replace(wrong, correct)
+
+    return command.strip()
+
+
 def execute_command(command):
+    command = normalize_command(command)
 
-    # Clean the command
-    command = command.strip()
-    command = command.rstrip(".!?")
+    print(f"Executing command: {command}")
 
-    # Remove commas after command words
-    command = command.replace(",", "", 1)
-
-    command_lower = command.lower()
-
-    # -------------------------
     # Exit
-    # -------------------------
-    if command_lower == "exit":
+    if command in ("exit", "quit", "stop agent", "close agent"):
         return "exit"
 
-    # -------------------------
     # Open applications
-    # -------------------------
-    if command_lower == "open notepad":
-        open_application("notepad")
+    app_commands = {
+        "notepad": ("notepad", ["notepad"]),
+        "calculator": ("calculator", ["calculator", "calc"]),
+        "paint": ("mspaint", ["paint", "mspaint"]),
+    }
+
+    for app_name, (executable, aliases) in app_commands.items():
+        for alias in aliases:
+            if command in (
+                f"open {alias}",
+                f"launch {alias}",
+                f"start {alias}"
+            ):
+                open_application(executable)
+                print(f"Opened {app_name}.")
+                return
+
+    # Write or type text
+    for prefix in ("write ", "type ", "write down ", "enter text "):
+        if command.startswith(prefix):
+            text = command[len(prefix):].strip()
+
+            if text:
+                type_text(text)
+            else:
+                print("No text provided.")
+
+            return
+
+    # Keyboard commands
+    key_commands = {
+        "press enter": "enter",
+        "hit enter": "enter",
+        "press space": "space",
+        "hit space": "space",
+        "press backspace": "backspace",
+        "hit backspace": "backspace",
+        "press tab": "tab",
+        "hit tab": "tab",
+    }
+
+    if command in key_commands:
+        press_key(key_commands[command])
         return
 
-    if command_lower == "open calculator":
-        open_application("calculator")
-        return
-
-    if command_lower == "open paint":
-        open_application("mspaint")
-        return
-
-    if command_lower == "open word":
-        open_application("winword")
-        return
-
-    if command_lower == "open browser":
-        open_application("chrome")
-        return
-
-    # -------------------------
-    # Write / Type text
-    # -------------------------
-    if command_lower.startswith("write "):
-        text = command[6:].strip()
-        type_text(text)
-        return
-
-    if command_lower.startswith("type "):
-        text = command[5:].strip()
-        type_text(text)
-        return
-
-    # Whisper sometimes hears "write" as "right"
-    if command_lower.startswith("right "):
-        text = command[6:].strip()
-        type_text(text)
-        return
-
-    # -------------------------
-    # Keyboard
-    # -------------------------
-    if command_lower == "press enter":
-        press_key("enter")
-        return
-
-    if command_lower == "press space":
-        press_key("space")
-        return
-
-    if command_lower == "press backspace":
-        press_key("backspace")
-        return
-
-    # -------------------------
-    # Unknown command
-    # -------------------------
-    print(f"I don't know how to perform that command.")
+    print(f"Unknown command: {command}")
