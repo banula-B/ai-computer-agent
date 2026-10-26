@@ -71,7 +71,7 @@ def plan_task(command):
         # Handle an explicit request for two lines.
         two_lines = re.match(
             r"^(?:these two lines|the following two lines)"
-            r"\s*[:,]?\s*(.+)$",
+            r"\s*[:,?.!]?\s*(.+)$",
             text,
             flags=re.IGNORECASE,
         )
