@@ -20,6 +20,7 @@ def normalize_command(command):
     corrections = {
         "node pad": "notepad",
         "north pad": "notepad",
+        "northpad": "notepad",
         "note pad": "notepad",
         "not panned": "notepad",
         "not bad": "notepad",
